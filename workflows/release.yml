@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - '*.*.*'
+jobs:
+  release:
+    runs-on: ubuntu-latest   
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup dotnet 6.0
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Clean
+        run: dotnet clean -c Release -property:SolutionDir=./
+
+      - name: Build
+        run: dotnet build -c Release -property:SolutionDir=./
+
+      - name: Pack Colosoft DataServices
+        run: dotnet pack src/Colosoft.DataServices/Colosoft.DataServices.csproj -c Release --no-build -o ./output/nuget-package -property:SolutionDir=./
+        
+      - name: Pack Colosoft DataServices Refit
+        run: dotnet pack src/Colosoft.DataServices.Refit/Colosoft.DataServices.Refit.csproj -c Release --no-build -o ./output/nuget-package -property:SolutionDir=./
+        
+      - name: Publish to Nuget.org
+        run: dotnet nuget push ./output/nuget-package/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
