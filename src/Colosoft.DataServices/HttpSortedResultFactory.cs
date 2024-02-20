@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
@@ -6,17 +7,24 @@ using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    public class SortedResultFactory : ISortedResultFactory
+    public class HttpSortedResultFactory : IHttpSortedResultFactory
     {
-        private readonly HttpClient httpClient;
+        private readonly IHttpClientFactory httpClientFactory;
         private readonly IHttpContentSerializer httpContentSerializer;
 
-        public SortedResultFactory(
-            HttpClient httpClient,
+        public HttpSortedResultFactory(
+            IHttpClientFactory httpClientFactory,
             IHttpContentSerializer httpContentSerializer)
         {
-            this.httpClient = httpClient;
+            this.httpClientFactory = httpClientFactory;
             this.httpContentSerializer = httpContentSerializer;
+        }
+
+        public virtual string HttpClientName { get; set; } = Options.DefaultName;
+
+        protected virtual HttpClient CreateHttpClient(Uri address)
+        {
+            return this.httpClientFactory.CreateClient(this.HttpClientName);
         }
 
         public async Task<ISortedResult<T>> Create<T>(HttpResponseMessage response, CancellationToken cancellationToken)
@@ -33,12 +41,16 @@ namespace Colosoft.DataServices
 
         public async Task<ISortedResult<T>> Create<T>(Uri address, CancellationToken cancellationToken)
         {
-            var response = await this.httpClient.SendAsync(
-                new HttpRequestMessage(HttpMethod.Get, address),
-                cancellationToken);
+            using (var httpClient = this.CreateHttpClient(address))
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Get, address))
+                {
+                    var response = await httpClient.SendAsync(request, cancellationToken);
 
-            response.EnsureSuccessStatusCode();
-            return await this.Create<T>(response, cancellationToken);
+                    response.EnsureSuccessStatusCode();
+                    return await this.Create<T>(response, cancellationToken);
+                }
+            }
         }
     }
 }

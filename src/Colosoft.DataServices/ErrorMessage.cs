@@ -1,16 +1,19 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
 
 namespace Colosoft.DataServices
 {
     public class ErrorMessage
     {
-        [JsonPropertyName("codigo")]
         public int Code { get; set; }
 
-        [JsonPropertyName("mensagem")]
+        public string Type { get; set; }
+
         public string? Message { get; set; }
 
-        [JsonPropertyName("pilha")]
         public string? StackTrace { get; set; }
+
+        public ErrorMessage? Inner { get; set; }
+
+        public IDictionary<string, string> Metadata { get; set; }
     }
 }

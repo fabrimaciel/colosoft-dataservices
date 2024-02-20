@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 namespace Colosoft.DataServices
 {
 #pragma warning disable CA1010 // Collections should implement generic interface
-    public interface IDataSource : INotifyPropertyChanged, INotifyCollectionChanged, IEnumerable
+    public interface IDataSource : INotifyPropertyChanged, INotifyCollectionChanged, IEnumerable, IDisposable
 #pragma warning restore CA1010 // Collections should implement generic interface
     {
         bool HasFirstPage { get; }

@@ -5,8 +5,10 @@ namespace Colosoft.DataServices
 {
     public interface IPagedResultFactory
     {
-        Task<IPagedResult<T>> Create<T>(System.Net.Http.HttpResponseMessage response, CancellationToken cancellationToken);
-
-        Task<IPagedResult<T>> Create<T>(System.Uri address, CancellationToken cancellationToken);
+        Task<IPagedResult<T>> Create<T>(
+            PagedResultQueryHandler<T> handler,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken);
     }
 }

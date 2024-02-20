@@ -40,7 +40,7 @@ namespace Colosoft.DataServices.Refit
                 {
                     return (T)typeof(Enumerable)
                         .GetMethod("Empty", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public) !
-                        .MakeGenericMethod(returnType.GetGenericArguments().First())
+                        .MakeGenericMethod(returnType.GetGenericArguments()[0])
                         .Invoke(null, null) !;
                 }
             }

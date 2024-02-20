@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    internal class SortedPagedResult<T> : PagedResult<T>, ISortedPagedResult<T>, ISortedResult
+    internal class HttpSortedPagedResult<T> : HttpPagedResult<T>, ISortedPagedResult<T>, ISortedResult
     {
-        private readonly ISortedResultFactory sortedResultFactory;
+        private readonly IHttpSortedResultFactory sortedResultFactory;
         private readonly Uri requestUrl;
 
-        public SortedPagedResult(
+        public HttpSortedPagedResult(
             IEnumerable<T> items,
             LinkHeader linkHeader,
             int totalCount,
             Uri requestUrl,
             IEnumerable<SortDescriptor> sorts,
-            ISortedResultFactory sortedResultFactory,
-            IPagedResultFactory pagedResultFactory)
+            IHttpSortedResultFactory sortedResultFactory,
+            IHttpPagedResultFactory pagedResultFactory)
             : base(items, linkHeader, totalCount, pagedResultFactory)
         {
             this.requestUrl = requestUrl;

@@ -6,6 +6,19 @@ namespace Colosoft.DataServices
     [Serializable]
     public class RemoteServiceException : Exception
     {
+        public ErrorMessage? ErrorMessage { get; }
+
+        private static string GetMessage(ErrorMessage errorMessage) =>
+            errorMessage.Message!;
+
+        public RemoteServiceException(ErrorMessage? errorMessage)
+            : base(
+                  GetMessage(errorMessage ?? throw new ArgumentNullException(nameof(errorMessage))),
+                  errorMessage.Inner != null ? new RemoteServiceException(errorMessage.Inner) : null)
+        {
+            this.ErrorMessage = errorMessage;
+        }
+
         public RemoteServiceException()
         {
         }

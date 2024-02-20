@@ -3,14 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    public abstract class DataSourceBase<TItem> : IDataSource<TItem>
+    public abstract class DataSourceBase<TItem> : IDataSource<TItem>, IDataSourceEventsListener, IDisposable
     {
         private readonly Func<object, TItem> itemConverter;
+        private readonly IEnumerable? sourceItems;
+        private readonly List<IDataSourceObserver> observers = new List<IDataSourceObserver>();
+
         private IEnumerable? items;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -20,9 +24,17 @@ namespace Colosoft.DataServices
             IEnumerable? items,
             Func<object, TItem> itemConverter)
         {
+            this.sourceItems = items;
             this.items = items;
             this.itemConverter = itemConverter ?? throw new ArgumentNullException(nameof(itemConverter));
+
+            if (this.sourceItems is INotifyCollectionChanged notifyCollectionChanged)
+            {
+                notifyCollectionChanged.CollectionChanged += this.SourceItemsCollectionChanged;
+            }
         }
+
+        ~DataSourceBase() => this.Dispose(false);
 
         public IEnumerable<TItem> Data => this;
 
@@ -88,7 +100,7 @@ namespace Colosoft.DataServices
 
         public virtual int PageSize => this.PagedResult?.PageSize ?? this.TotalCount;
 
-        public int TotalCount
+        public virtual int TotalCount
         {
             get
             {
@@ -136,11 +148,38 @@ namespace Colosoft.DataServices
 
         public virtual IEnumerable<SortDescriptor> Sorts => this.SortedResult?.Sorts ?? Array.Empty<SortDescriptor>();
 
+        protected virtual void Add(IDataSourceObserver observer) =>
+            this.observers.Add(observer ?? throw new ArgumentNullException(nameof(observer)));
+
+        protected virtual bool Remove(IDataSourceObserver observer) =>
+            this.observers.Remove(observer);
+
+        void IDataSourceEventsListener.Add(IDataSourceObserver observer) =>
+            this.observers.Add(observer ?? throw new ArgumentNullException(nameof(observer)));
+
+        bool IDataSourceEventsListener.Remove(IDataSourceObserver observer) =>
+            this.observers.Remove(observer);
+
+#pragma warning disable S2971 // LINQ expressions should be simplified
+        protected Task NotifyObservers(Func<IDataSourceObserver, Task> callback) =>
+            Task.WhenAll(this.observers.ToArray().Select(callback));
+#pragma warning restore S2971 // LINQ expressions should be simplified
+
+        protected virtual Task NotifyRefreshed(CancellationToken cancellationToken) =>
+            this.NotifyObservers(f => f.OnRefreshed(cancellationToken));
+
+        protected virtual Task NotifyReseted(CancellationToken cancellationToken) =>
+            this.NotifyObservers(f => f.OnReseted(cancellationToken));
+
+        protected virtual Task NotifyDataChanged(CancellationToken cancellationToken) =>
+            this.NotifyObservers(f => f.OnDataChanged(cancellationToken));
+
         public virtual async Task MoveNextPage(CancellationToken cancellationToken)
         {
             if (this.PagedResult != null && this.PagedResult.HasNextPage)
             {
                 this.Items = (await this.PagedResult.GetNext(cancellationToken)) !;
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -149,6 +188,7 @@ namespace Colosoft.DataServices
             if (this.PagedResult != null && this.PagedResult.HasPreviousPage)
             {
                 this.Items = (await this.PagedResult.GetPrevious(cancellationToken)) !;
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -157,6 +197,7 @@ namespace Colosoft.DataServices
             if (this.PagedResult != null && this.PagedResult.HasFirstPage)
             {
                 this.Items = (await this.PagedResult.GetFirst(cancellationToken)) !;
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -164,7 +205,8 @@ namespace Colosoft.DataServices
         {
             if (this.PagedResult != null && this.PagedResult.HasLastPage)
             {
-                this.Items = (await this.PagedResult.GetFirst(cancellationToken)) !;
+                this.Items = (await this.PagedResult.GetLast(cancellationToken)) !;
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -173,6 +215,7 @@ namespace Colosoft.DataServices
             if (this.PagedResult != null)
             {
                 this.Items = (await this.PagedResult.GetPage(page, cancellationToken)) !;
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -181,6 +224,7 @@ namespace Colosoft.DataServices
             if (this.SortedResult != null)
             {
                 this.Items = await this.SortedResult.Sort(sorts, cancellationToken);
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -190,6 +234,9 @@ namespace Colosoft.DataServices
             {
                 this.Items = (await this.PagedResult.GetPage(this.Page, cancellationToken)) !;
             }
+
+            await this.NotifyDataChanged(cancellationToken);
+            await this.NotifyRefreshed(cancellationToken);
         }
 
         public virtual async Task Reset(CancellationToken cancellationToken)
@@ -197,7 +244,10 @@ namespace Colosoft.DataServices
             if (this.Items is IResettableResult resettableResult)
             {
                 this.Items = (IEnumerable?)await resettableResult.Reset(cancellationToken);
+                await this.NotifyDataChanged(cancellationToken);
             }
+
+            await this.NotifyReseted(cancellationToken);
         }
 
         protected void OnPropertyChanged(params string[] propertyNames)
@@ -206,6 +256,11 @@ namespace Colosoft.DataServices
             {
                 this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
             }
+        }
+
+        private void SourceItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            this.CollectionChanged?.Invoke(this, e);
         }
 
         public IEnumerator<TItem> GetEnumerator()
@@ -220,5 +275,19 @@ namespace Colosoft.DataServices
         }
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.sourceItems is INotifyCollectionChanged notifyCollectionChanged)
+            {
+                notifyCollectionChanged.CollectionChanged -= this.SourceItemsCollectionChanged;
+            }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

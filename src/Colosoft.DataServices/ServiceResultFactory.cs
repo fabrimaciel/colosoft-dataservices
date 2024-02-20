@@ -8,13 +8,19 @@ namespace Colosoft.DataServices
 {
     public class ServiceResultFactory : IServiceResultFactory
     {
-        private readonly SortedPagedResultFactory factory;
+        private readonly HttpSortedPagedResultFactory factory;
 
         public ServiceResultFactory(
-            HttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IHttpContentSerializer httpContentSerializer)
         {
-            this.factory = new SortedPagedResultFactory(httpClient, httpContentSerializer);
+            this.factory = new HttpSortedPagedResultFactory(httpClientFactory, httpContentSerializer);
+        }
+
+        public virtual string HttpClientName
+        {
+            get => this.factory.HttpClientName;
+            set => this.factory.HttpClientName = value;
         }
 
         public async Task<IEnumerable<T>> Create<T>(HttpResponseMessage response, CancellationToken cancellationToken) =>

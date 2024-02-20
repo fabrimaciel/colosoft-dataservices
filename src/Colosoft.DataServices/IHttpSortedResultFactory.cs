@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    public interface ISortedResultFactory
+    public interface IHttpSortedResultFactory
     {
         Task<ISortedResult<T>> Create<T>(System.Net.Http.HttpResponseMessage response, CancellationToken cancellationToken);
 

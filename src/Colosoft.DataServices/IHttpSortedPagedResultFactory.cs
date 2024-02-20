@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    public interface ISortedPagedResultFactory
+    public interface IHttpSortedPagedResultFactory
     {
         ISortedPagedResult<T> Create<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IEnumerable<T> items);
 

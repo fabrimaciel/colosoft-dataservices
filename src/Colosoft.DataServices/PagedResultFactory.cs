@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,35 +6,20 @@ namespace Colosoft.DataServices
 {
     public class PagedResultFactory : IPagedResultFactory
     {
-        private readonly HttpClient httpClient;
-        private readonly IHttpContentSerializer httpContentSerializer;
-
-        public PagedResultFactory(
-            HttpClient httpClient,
-            IHttpContentSerializer httpContentSerializer)
+        public async Task<IPagedResult<T>> Create<T>(
+            PagedResultQueryHandler<T> handler,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken)
         {
-            this.httpClient = httpClient;
-            this.httpContentSerializer = httpContentSerializer;
-        }
-
-        public async Task<IPagedResult<T>> Create<T>(HttpResponseMessage response, CancellationToken cancellationToken)
-        {
-            var items = await this.httpContentSerializer.FromHttpContentAsync<IEnumerable<T>>(response.Content, cancellationToken);
-            var totalCount = response.GetTotalCount();
-
-            if (!totalCount.HasValue)
+            if (handler is null)
             {
-                totalCount = items.Count();
+                throw new ArgumentNullException(nameof(handler));
             }
 
-            return new PagedResult<T>(items, response.GetLinkHeader(), totalCount.Value, this);
-        }
+            var content = await handler.Invoke(new PagedResultQueryOptions(page, pageSize), cancellationToken);
 
-        public async Task<IPagedResult<T>> Create<T>(Uri address, CancellationToken cancellationToken)
-        {
-            var response = await this.httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, address), cancellationToken);
-            response.EnsureSuccessStatusCode();
-            return await this.Create<T>(response, cancellationToken);
+            return new PagedResultQuery<T>(content, handler, page, pageSize);
         }
     }
 }

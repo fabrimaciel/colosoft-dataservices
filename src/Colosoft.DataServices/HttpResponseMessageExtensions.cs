@@ -108,7 +108,7 @@ namespace Colosoft.DataServices
 
         internal static LinkHeader GetLinkHeader(this HttpResponseMessage response)
         {
-            LinkHeader? result = null;
+            LinkHeader? result;
 
             if (response.Headers.TryGetValues("link", out var headerValues))
             {

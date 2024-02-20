@@ -1,28 +1,29 @@
 ﻿<Project>
      
   <PropertyGroup>
-    <Product>Colosoft.DataService</Product>
+    <Product>Colosoft.DataServices</Product>
     <Authors>Fabrício Maciel Sales</Authors>
     <Company>Colosoft</Company>
-    <Copyright>Copyright 2022</Copyright>
+    <Copyright>Copyright 2023</Copyright>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+		<PackageProjectUrl>https://github.com/colosoftcorp/colosoft-dataservices</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/colosoftcorp/colosoft-dataservices</RepositoryUrl>
+		<PackageTags>colosoft; dataservices</PackageTags>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
- 
-
-  
+	
   <ItemGroup>
-	  <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.1">
+		<PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta009">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-	<PackageReference Include="MinVer" Version="2.5.0">
+	<PackageReference Include="MinVer" Version="4.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

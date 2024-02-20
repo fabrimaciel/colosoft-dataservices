@@ -10,14 +10,14 @@ namespace Colosoft.DataServices
     internal class SortedResult<T> : ISortedResult<T>, ISortedResult, IResettableResult
     {
         private readonly IEnumerable<T> items;
-        private readonly ISortedResultFactory sortedResultFactory;
+        private readonly IHttpSortedResultFactory sortedResultFactory;
         private readonly Uri requestUrl;
 
         public SortedResult(
             IEnumerable<T> items,
             Uri requestUrl,
             IEnumerable<SortDescriptor> sorts,
-            ISortedResultFactory sortedResultFactory)
+            IHttpSortedResultFactory sortedResultFactory)
         {
             this.items = items;
             this.requestUrl = requestUrl;

@@ -94,6 +94,7 @@ namespace Colosoft.DataServices
             if (!this.IsLoaded)
             {
                 this.Items = await this.ExecuteQuery(cancellationToken);
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -137,6 +138,7 @@ namespace Colosoft.DataServices
             {
                 var options = await this.CreateQueryOptions(this.Sorts, page, this.PageSize, cancellationToken);
                 this.Items = await this.Query.Invoke(options, cancellationToken);
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
 
@@ -150,15 +152,16 @@ namespace Colosoft.DataServices
             }
         }
 
-        public override Task Refresh(CancellationToken cancellationToken)
+        public override async Task Refresh(CancellationToken cancellationToken)
         {
             if (this.IsLoaded)
             {
-                return base.Refresh(cancellationToken);
+                await base.Refresh(cancellationToken);
             }
             else
             {
-                return this.EnsureLoaded(cancellationToken);
+                await this.EnsureLoaded(cancellationToken);
+                await this.NotifyRefreshed(cancellationToken);
             }
         }
 
@@ -166,6 +169,8 @@ namespace Colosoft.DataServices
         {
             var options = await this.CreateQueryOptions(this.sorts, Math.Min(this.page, 1), this.pageSize, cancellationToken);
             this.Items = await this.Query.Invoke(options, cancellationToken);
+            await this.NotifyDataChanged(cancellationToken);
+            await this.NotifyReseted(cancellationToken);
         }
 
         public override async Task Sort(IEnumerable<SortDescriptor> sorts, CancellationToken cancellationToken)
@@ -178,6 +183,7 @@ namespace Colosoft.DataServices
             {
                 var options = await this.CreateQueryOptions(sorts, this.Page, this.PageSize, cancellationToken);
                 this.Items = await this.Query.Invoke(options, cancellationToken);
+                await this.NotifyDataChanged(cancellationToken);
             }
         }
     }

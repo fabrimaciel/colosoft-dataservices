@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace Colosoft.DataServices
 {
-    internal class PagedResult<T> : IPagedResult<T>, IPagedResult, IResettableResult
+    internal class HttpPagedResult<T> : IPagedResult<T>, IPagedResult, IResettableResult
     {
         private readonly IEnumerable<T> items;
-        private readonly IPagedResultFactory pagedResultFactory;
+        private readonly IHttpPagedResultFactory pagedResultFactory;
 
-        public PagedResult(
+        public HttpPagedResult(
             IEnumerable<T> items,
             LinkHeader linkHeader,
             int totalCount,
-            IPagedResultFactory pagedResultFactory)
+            IHttpPagedResultFactory pagedResultFactory)
         {
             this.items = items;
             this.TotalCount = totalCount;
